@@ -1,0 +1,38 @@
+public class Employee {
+   static String companyName;
+     String name;
+     float salary;
+     public Employee(){
+         System.out.println("Default constructor");
+     }
+     public Employee(String name){
+         this.name = name;
+     }
+     public Employee(String name, float salary){
+         this.name = name;
+         this.salary = salary;
+     }
+    public void insertValue(String companyName, String name, float salary){
+        this.companyName = companyName;
+        this.name = name;
+        this.salary = salary;
+    }
+    public void display(){
+        System.out.println("Company Name: "+companyName);
+        System.out.println("Name: "+name);
+        System.out.println("Salary: "+salary);
+    }
+
+    public static void main(String[] args) {
+        Employee emp = new Employee();
+        Employee.companyName = "Akij Brand";
+        emp.insertValue("Akij Brand", "Nabila", 5000f);
+        emp.display();
+        Employee emp2 = new Employee("Nabila", 5000f);
+        emp2.display();
+        Employee emp3 = new Employee("Nabila");
+        emp3.display();
+
+    }
+
+}
