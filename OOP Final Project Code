@@ -1,0 +1,225 @@
+import java.util.*;
+
+// ===== Custom Exception =====
+class InsufficientBalanceException extends Exception {
+    public InsufficientBalanceException(String msg) {
+        super(msg);
+    }
+}
+
+// ===== Abstract User Class =====
+abstract class User {
+    private String name;
+    private String phone;
+
+    public User(String name, String phone) {
+        this.name = name;
+        this.phone = phone;
+    }
+
+    public String getName() { return name; }
+    public String getPhone() { return phone; }
+
+    public abstract void showUserType();
+}
+
+// ===== Passenger Class =====
+class Passenger extends User {
+    private double balance;
+
+    public Passenger(String name, String phone, double balance) {
+        super(name, phone);
+        this.balance = balance;
+    }
+
+    public double getBalance() { return balance; }
+    public void addBalance(double amt) { balance += amt; }
+
+    public void deductFare(double amount) throws InsufficientBalanceException {
+        if(amount > balance) throw new InsufficientBalanceException("Not enough balance!");
+        balance -= amount;
+    }
+
+    // Implement abstract method
+    public void showUserType() {
+        System.out.println("User Type: Passenger");
+    }
+}
+
+// ===== Driver Class =====
+class Driver extends User {
+    private String vehicleType;
+    private String vehicleModel;
+    private String numberPlate;
+
+    public Driver(String name, String phone, String vehicleType, String vehicleModel, String numberPlate) {
+        super(name, phone);
+        this.vehicleType = vehicleType;
+        this.vehicleModel = vehicleModel;
+        this.numberPlate = numberPlate;
+    }
+
+    public String getVehicleType() { return vehicleType; }
+    public String getVehicleModel() { return vehicleModel; }
+    public String getNumberPlate() { return numberPlate; }
+
+    // Polymorphism: fare calculation based on vehicle type
+    public double calculateFare(double distance) {
+        switch(vehicleType.toLowerCase()) {
+            case "car": return distance * 20;
+            case "bike": return distance * 10;
+            case "cng": return distance * 15;
+            default: return distance * 20;
+        }
+    }
+
+    // Implement abstract method
+    public void showUserType() {
+        System.out.println("User Type: Driver");
+    }
+}
+
+// ===== Payment Interface =====
+interface Payment {
+    void pay(double amount);
+}
+
+// ===== PaymentMethod Class =====
+class PaymentMethod implements Payment {
+    private String method; // bKash, Cash, Card
+
+    public PaymentMethod(String method) {
+        this.method = method;
+    }
+
+    public void pay(double amount) {
+        System.out.println("Paid " + amount + " Taka via " + method + ".");
+    }
+}
+
+// ===== Ride Class =====
+class Ride {
+    private Passenger passenger;
+    private Driver driver;
+    private double distance;
+    private double fare;
+
+    public Ride(Passenger p, Driver d, double distance, double fare) {
+        this.passenger = p;
+        this.driver = d;
+        this.distance = distance;
+        this.fare = fare;
+    }
+
+    public void showRideDetails() {
+        System.out.println("----- Ride Details -----");
+        System.out.println("Passenger: " + passenger.getName());
+        passenger.showUserType(); // Show type
+        System.out.println("Driver: " + driver.getName());
+        driver.showUserType(); // Show type
+        System.out.println("Vehicle: " + driver.getVehicleType() + " - " + driver.getVehicleModel()
+                + " [" + driver.getNumberPlate() + "]");
+        System.out.println("Distance: " + distance + " km | Fare: " + fare + " Taka");
+        System.out.println("------------------------");
+    }
+}
+
+// ===== Main Class =====
+public class RideSharingApp {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("=== Online Ride Sharing System ===");
+
+        // Passenger Input
+        System.out.print("Enter Passenger Name: ");
+        String pName = sc.nextLine();
+        System.out.print("Enter Passenger Phone: ");
+        String pPhone = sc.nextLine();
+        System.out.print("Enter Initial Balance: ");
+        double pBalance = sc.nextDouble();
+        sc.nextLine();
+        Passenger passenger = new Passenger(pName, pPhone, pBalance);
+
+        ArrayList<Ride> rideHistory = new ArrayList<>();
+
+        boolean running = true;
+        while(running) {
+            System.out.println("\n--- Menu ---");
+            System.out.println("1. Book Ride");
+            System.out.println("2. Add Balance");
+            System.out.println("3. Ride History");
+            System.out.println("4. Exit");
+            System.out.print("Choose option: ");
+            int option = sc.nextInt();
+            sc.nextLine();
+
+            switch(option) {
+                case 1:
+                    // Driver input
+                    System.out.print("Driver Name: ");
+                    String dName = sc.nextLine();
+                    System.out.print("Driver Phone: ");
+                    String dPhone = sc.nextLine();
+                    System.out.print("Vehicle Type (Car/Bike/CNG): ");
+                    String vType = sc.nextLine();
+                    System.out.print("Vehicle Model: ");
+                    String vModel = sc.nextLine();
+                    System.out.print("Vehicle Number Plate: ");
+                    String vPlate = sc.nextLine();
+
+                    Driver driver = new Driver(dName,dPhone,vType,vModel,vPlate);
+
+                    System.out.print("Enter Distance (km): ");
+                    double distance = sc.nextDouble();
+                    sc.nextLine();
+
+                    double fare = driver.calculateFare(distance);
+                    System.out.println("Calculated Fare: " + fare + " Taka");
+
+                    System.out.print("Choose Payment (bKash/Cash/Card): ");
+                    String method = sc.nextLine();
+                    PaymentMethod payment = new PaymentMethod(method);
+
+                    try {
+                        passenger.deductFare(fare);
+                        payment.pay(fare);
+                        System.out.println("Ride Successful! Remaining Balance: " + passenger.getBalance());
+
+                        Ride ride = new Ride(passenger, driver, distance, fare);
+                        rideHistory.add(ride);
+                    } catch(InsufficientBalanceException e) {
+                        System.out.println("Payment Failed: " + e.getMessage());
+                    }
+                    break;
+
+                case 2:
+                    System.out.print("Enter amount to add: ");
+                    double amt = sc.nextDouble();
+                    sc.nextLine();
+                    passenger.addBalance(amt);
+                    System.out.println("Balance Updated: " + passenger.getBalance());
+                    break;
+
+                case 3:
+                    if(rideHistory.isEmpty()) System.out.println("No rides yet.");
+                    else {
+                        System.out.println("\n--- Ride History ---");
+                        for(Ride r : rideHistory) r.showRideDetails();
+                    }
+                    break;
+
+                case 4:
+                    running = false;
+                    System.out.println("Exiting. Thank you for using Ride Sharing System!");
+                    break;
+
+                default:
+                    System.out.println("Invalid Option!");
+            }
+        }
+
+        sc.close();
+    }
+}
+
